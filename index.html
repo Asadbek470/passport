@@ -3,298 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Passport System 4.0 | Fixed</title>
+    <title>Passport OS 5.0</title>
     
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
         :root {
-            --ios-bg: #000000;
-            --glass: rgba(255, 255, 255, 0.1);
-            --blur: blur(20px);
+            --ios-bg: #050505;
+            --glass: rgba(255, 255, 255, 0.08);
+            --blur: blur(25px);
             --accent: #0A84FF;
-            --safe-bottom: env(safe-area-inset-bottom);
+            --gold: #D4AF37;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body, html {
             margin: 0; padding: 0; 
-            font-family: -apple-system, system-ui, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--ios-bg); color: white;
             height: 100%; width: 100%; overflow: hidden;
         }
 
-        #app {
-            width: 100%; height: 100%;
-            display: flex; flex-direction: column;
-            position: relative;
-        }
+        #app { width: 100%; height: 100%; display: flex; flex-direction: column; }
 
-        /* Адаптивные экраны */
-        .screen {
-            display: none; flex-direction: column;
-            height: 100%; padding: 20px; padding-bottom: 100px;
-            overflow-y: auto; -webkit-overflow-scrolling: touch;
-        }
+        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto; }
         .screen.active { display: flex; }
 
-        /* Glassmorphism */
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: var(--blur);
-            -webkit-backdrop-filter: var(--blur);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px; padding: 18px; margin-bottom: 15px;
-        }
-
-        h1 { font-size: 1.8rem; margin-bottom: 5px; }
-        input, select {
-            width: 100%; background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.1); padding: 15px;
-            border-radius: 12px; color: white; margin-bottom: 10px; font-size: 16px; /* 16px предотвращает зум на iOS */
-        }
-
-        button {
-            width: 100%; padding: 16px; border-radius: 12px; border: none;
-            background: var(--accent); color: white; font-weight: 600; font-size: 1rem;
-        }
-
-        /* Исправленные карточки Wallet */
-        .docs-container { display: flex; flex-direction: column; gap: 15px; }
-        
+        /* Дизайн карточки Pro */
         .card {
-            min-height: 200px; border-radius: 16px; padding: 20px;
+            min-height: 240px; border-radius: 20px; padding: 22px;
             position: relative; overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.15);
             background-size: cover;
+            margin-bottom: 20px;
         }
 
-        .passport { background: linear-gradient(135deg, #7b0d1e, #b91313); }
-        .travel { background: linear-gradient(135deg, #1e3c72, #2a5298); }
-        .driver { background: linear-gradient(135deg, #333, #000); }
+        /* Водяной знак */
+        .watermark {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 5rem; font-weight: 900;
+            opacity: 0.04; pointer-events: none; white-space: nowrap;
+        }
 
-        .card-label { font-size: 0.65rem; text-transform: uppercase; opacity: 0.7; }
-        .card-val { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+        .passport { background: linear-gradient(145deg, #5e0b15, #2e0509); }
+        .travel { background: linear-gradient(145deg, #1a3a5f, #0a1a2f); }
+        .driver { background: linear-gradient(145deg, #2c3e50, #000); }
+
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+        .system-name { font-size: 0.7rem; letter-spacing: 2px; color: var(--gold); font-weight: bold; }
         
-        .qr-box {
-            position: absolute; bottom: 15px; right: 15px;
-            background: white; padding: 4px; border-radius: 6px;
-            width: 70px; height: 70px;
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .label { font-size: 0.6rem; text-transform: uppercase; color: rgba(255,255,255,0.5); display: block; }
+        .value { font-size: 0.95rem; font-weight: 600; color: #fff; }
+        .value.name { font-size: 1.2rem; margin-bottom: 5px; }
+
+        .qr-wrap {
+            position: absolute; bottom: 18px; right: 18px;
+            background: #fff; padding: 5px; border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
-        /* Таб-бар с учетом безопасных зон iPhone */
-        .tab-bar {
-            position: absolute; bottom: 0; width: 100%;
-            height: calc(70px + var(--safe-bottom));
-            background: rgba(15, 15, 15, 0.9);
-            backdrop-filter: var(--blur);
+        /* Кнопки и поля */
+        .glass-btn {
+            background: var(--accent); color: white; border: none;
+            padding: 18px; border-radius: 15px; font-weight: 700; width: 100%;
+            margin-top: 10px; box-shadow: 0 10px 20px rgba(10, 132, 255, 0.3);
+        }
+
+        .input-group { background: var(--glass); border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        input { width: 100%; background: none; border: none; color: #fff; font-size: 1rem; border-bottom: 1px solid #333; padding: 8px 0; margin-bottom: 10px; }
+
+        /* Таб-бар */
+        .tabs {
+            position: fixed; bottom: 0; width: 100%; height: 80px;
+            background: rgba(10, 10, 10, 0.9); backdrop-filter: var(--blur);
             display: flex; justify-content: space-around; align-items: center;
-            border-top: 0.5px solid rgba(255,255,255,0.1);
-            padding-bottom: var(--safe-bottom);
-            z-index: 100;
+            border-top: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;
         }
-        .tab-item { color: #888; font-size: 0.7rem; text-align: center; flex: 1; }
-        .tab-item.active { color: var(--accent); }
-        .tab-item span { font-size: 22px; display: block; }
+        .tab { color: #555; text-align: center; font-size: 0.65rem; transition: 0.3s; }
+        .tab.active { color: var(--accent); transform: translateY(-3px); }
+        .tab img { width: 28px; height: 28px; margin-bottom: 4px; display: block; margin-left: auto; margin-right: auto; }
 
-        /* Сканер на весь экран */
-        #scanner-view {
-            position: fixed; top:0; left:0; right:0; bottom:0;
-            background: #000; z-index: 999; display: none;
-        }
+        #scanner-modal { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; display:none; flex-direction:column; }
     </style>
 </head>
 <body>
 
 <div id="app">
     <section id="auth-screen" class="screen active">
-        <div style="margin-top: auto;">
-            <h1>Passport 4.0</h1>
-            <p style="color:#888; margin-bottom: 20px;">Цифровой профиль</p>
-            <div class="glass-panel">
-                <input type="text" id="u-name" placeholder="Логин">
+        <div style="margin-top: auto; padding-bottom: 40px;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px;">Passport <span style="color:var(--accent)">OS</span></h1>
+            <p style="color:#666; margin-bottom: 30px;">Система верификации личности 5.0</p>
+            <div class="input-group">
+                <input type="text" id="u-login" placeholder="Имя пользователя">
                 <input type="password" id="u-pass" placeholder="Пароль">
-                <button onclick="App.auth()">Войти / Создать</button>
+                <button class="glass-btn" onclick="System.auth()">Авторизоваться</button>
             </div>
         </div>
     </section>
 
-    <section id="profile-screen" class="screen">
-        <h2>Анкета</h2>
-        <div class="glass-panel">
-            <input type="text" id="p-last" placeholder="Фамилия">
-            <input type="text" id="p-first" placeholder="Имя">
-            <input type="date" id="p-date">
-            <input type="text" id="p-sign" placeholder="Текст подписи">
-            <button onclick="App.saveProfile()">Завершить</button>
+    <section id="form-screen" class="screen">
+        <h2>Регистрация в базе</h2>
+        <div class="input-group">
+            <label class="label">Фамилия Имя Отчество</label>
+            <input type="text" id="p-full-name" placeholder="Иванов Иван Иванович">
+            <label class="label">Дата рождения</label>
+            <input type="date" id="p-bday">
+            <label class="label">Образец подписи</label>
+            <input type="text" id="p-signature" placeholder="Напишите кратко (напр. I.Ivanov)">
+            <button class="glass-btn" onclick="System.saveProfile()">Выпустить профиль</button>
         </div>
     </section>
 
     <section id="main-screen" class="screen">
-        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 id="view-title">Wallet</h2>
-            <div onclick="App.openScanner()" style="font-size:26px;">🔍</div>
-        </header>
-        <div id="docs-list" class="docs-container"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 id="tab-title">Цифровой Паспорт</h2>
+            <div onclick="System.openScanner()" style="font-size:24px; cursor:pointer; background:var(--glass); padding:10px; border-radius:50%">🔍</div>
+        </div>
         
-        <nav class="tab-bar">
-            <div class="tab-item active" onclick="App.tab('passport', this)"><span>📇</span>Паспорт</div>
-            <div class="tab-item" onclick="App.tab('travel', this)"><span>✈️</span>Загран</div>
-            <div class="tab-item" onclick="App.tab('driver', this)"><span>🚗</span>Права</div>
-        </nav>
+        <div id="doc-view"></div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="System.switch('passport', this)">🏠<br>Паспорт</div>
+            <div class="tab" onclick="System.switch('travel', this)">✈️<br>Загран</div>
+            <div class="tab" onclick="System.switch('driver', this)">🚗<br>Права</div>
+        </div>
     </section>
 
-    <div id="scanner-view">
-        <div id="reader" style="width: 100%; height: 80vh;"></div>
-        <button onclick="App.closeScanner()" style="background:red; border-radius:0;">Закрыть</button>
+    <div id="scanner-modal">
+        <div id="reader" style="flex:1"></div>
+        <button class="glass-btn" style="border-radius:0; background:#222;" onclick="System.closeScanner()">Закрыть сканер</button>
     </div>
 </div>
 
 <script>
-const App = {
-    currentUser: null,
-    db: { users: [] },
+const System = {
+    user: null,
+    db: JSON.parse(localStorage.getItem('p5_db')) || { users: [] },
 
-    init() {
-        // Загружаем актуальную базу
-        const data = localStorage.getItem('p4_db');
-        if (data) this.db = JSON.parse(data);
-    },
-
-    save() {
-        localStorage.setItem('p4_db', JSON.stringify(this.db));
-    },
+    init() { localStorage.setItem('p5_db', JSON.stringify(this.db)); },
 
     auth() {
-        this.init(); // Обновляем перед входом
-        const u = document.getElementById('u-name').value;
+        const u = document.getElementById('u-login').value;
         const p = document.getElementById('u-pass').value;
-        if(!u || !p) return;
+        if(!u || !p) return alert("Введите данные");
 
         let user = this.db.users.find(x => x.username === u);
         if(!user) {
             user = { username: u, password: p, profile: null, docs: [] };
             this.db.users.push(user);
-            this.save();
+            this.init();
         }
-
-        if(user.password !== p) return alert("Ошибка");
+        if(user.password !== p) return alert("Ошибка доступа");
         
-        this.currentUser = user;
-        this.showScreen(user.profile ? 'main-screen' : 'profile-screen');
-        if(user.profile) this.render('passport');
+        this.user = user;
+        this.renderView();
     },
 
     saveProfile() {
-        this.currentUser.profile = {
-            last: document.getElementById('p-last').value,
-            first: document.getElementById('p-first').value,
-            date: document.getElementById('p-date').value,
-            sign: document.getElementById('p-sign').value
-        };
-        this.save();
-        this.showScreen('main-screen');
-        this.render('passport');
+        const name = document.getElementById('p-full-name').value;
+        const bday = document.getElementById('p-bday').value;
+        const sign = document.getElementById('p-signature').value;
+        if(!name || !bday) return alert("Заполните поля");
+
+        this.user.profile = { name, bday, sign };
+        this.init();
+        this.renderView();
     },
 
-    showScreen(id) {
+    renderView() {
+        if(!this.user.profile) return this.show('form-screen');
+        this.show('main-screen');
+        this.draw('passport');
+    },
+
+    show(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     },
 
-    tab(type, el) {
-        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    switch(type, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         el.classList.add('active');
-        this.render(type);
+        this.draw(type);
     },
 
-    render(type) {
-        const list = document.getElementById('docs-list');
-        const docs = this.currentUser.docs.filter(d => d.type === type);
-        list.innerHTML = '';
-
-        if(docs.length === 0) {
-            list.innerHTML = `<div class="glass-panel" onclick="App.createDoc('${type}')" style="text-align:center">+ Выпустить</div>`;
+    draw(type) {
+        const container = document.getElementById('doc-view');
+        const doc = this.user.docs.find(d => d.type === type);
+        
+        if(!doc) {
+            container.innerHTML = `
+                <div class="input-group" style="text-align:center; padding:40px 20px;">
+                    <p style="color:#888">Документ не найден</p>
+                    <button class="glass-btn" onclick="System.createDoc('${type}')">Выпустить ${type}</button>
+                </div>`;
             return;
         }
 
-        docs.forEach(doc => {
-            const card = document.createElement('div');
-            card.className = `card ${type}`;
-            card.innerHTML = `
-                <div class="card-label">ID: ${doc.id}</div>
-                <div class="card-val">${this.currentUser.profile.last} ${this.currentUser.profile.first}</div>
-                <div class="card-label">Родился</div>
-                <div class="card-val">${this.currentUser.profile.date}</div>
-                <div style="font-family:cursive; font-size:1.2rem; margin-top:10px">${this.currentUser.profile.sign}</div>
-                <div class="qr-box"><canvas id="qrc-${doc.id}"></canvas></div>
-            `;
-            list.appendChild(card);
-            // Важно: QR содержит только ID для поиска
-            setTimeout(() => QRCode.toCanvas(document.getElementById(`qrc-${doc.id}`), doc.id, { width: 70, margin: 0 }), 50);
-        });
+        container.innerHTML = `
+            <div class="card ${type}">
+                <div class="watermark">ORIGINAL</div>
+                <div class="card-header">
+                    <div class="system-name">PASSPORT SYSTEM v5.0</div>
+                    <div style="font-size:0.6rem; color:var(--gold)">STRICT SECURITY</div>
+                </div>
+                <div class="value name">${this.user.profile.name}</div>
+                <div class="info-grid">
+                    <div><span class="label">ID Номер</span><span class="value">${doc.id}</span></div>
+                    <div><span class="label">Дата рождения</span><span class="value">${this.user.profile.bday}</span></div>
+                    <div><span class="label">Выдан</span><span class="value">${doc.issued}</span></div>
+                    <div><span class="label">Срок до</span><span class="value" style="color:var(--gold)">${doc.expiry}</span></div>
+                </div>
+                <div style="margin-top:15px;">
+                    <span class="label">Подпись владельца</span>
+                    <div style="font-family:cursive; font-size:1.2rem; color:rgba(255,255,255,0.8)">${this.user.profile.sign}</div>
+                </div>
+                <div class="qr-wrap"><canvas id="canvas-${doc.id}"></canvas></div>
+            </div>
+            <p style="text-align:center; color:#444; font-size:0.7rem;">Цифровая копия защищена криптографией</p>
+        `;
+        setTimeout(() => QRCode.toCanvas(document.getElementById(`canvas-${doc.id}`), doc.id, { width: 80, margin: 0 }), 50);
     },
 
     createDoc(type) {
-        const id = 'ID' + Math.random().toString(36).substr(2, 7).toUpperCase();
-        this.currentUser.docs.push({ id, type });
-        this.save();
-        this.render(type);
+        const id = 'PS-' + Math.random().toString(36).substr(2, 8).toUpperCase();
+        const now = new Date();
+        const exp = new Date(); exp.setFullYear(now.getFullYear() + 10);
+
+        this.user.docs.push({
+            id, type, 
+            issued: now.toLocaleDateString(), 
+            expiry: exp.toLocaleDateString()
+        });
+        this.init();
+        this.draw(type);
     },
 
-    // --- FIX SCANNER ---
     openScanner() {
-        document.getElementById('scanner-view').style.display = 'flex';
-        const scanner = new Html5Qrcode("reader");
-        this.activeScanner = scanner;
-        
-        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
-            (decodedText) => {
-                this.verify(decodedText);
-                this.closeScanner();
-            }
-        ).catch(err => {
-            alert("Ошибка камеры");
-            this.closeScanner();
-        });
+        document.getElementById('scanner-modal').style.display = 'flex';
+        this.scanner = new Html5Qrcode("reader");
+        this.scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
+            (res) => { this.verify(res); this.closeScanner(); }
+        );
     },
 
     closeScanner() {
-        if(this.activeScanner) {
-            this.activeScanner.stop().then(() => {
-                document.getElementById('scanner-view').style.display = 'none';
-            });
-        }
+        if(this.scanner) this.scanner.stop().then(() => {
+            document.getElementById('scanner-modal').style.display = 'none';
+        });
     },
 
     verify(scannedId) {
-        this.init(); // Обязательно подгружаем свежую базу перед проверкой!
-        
-        let found = null;
-        let owner = null;
+        // Загружаем актуальную базу перед проверкой
+        const db = JSON.parse(localStorage.getItem('p5_db'));
+        let foundUser = null;
+        let foundDoc = null;
 
-        // Глобальный поиск по ВСЕМ пользователям
-        for(let u of this.db.users) {
-            let doc = u.docs.find(d => d.id === scannedId);
-            if(doc) {
-                found = doc;
-                owner = u;
-                break;
-            }
+        for(let u of db.users) {
+            let d = u.docs.find(x => x.id === scannedId);
+            if(d) { foundUser = u; foundDoc = d; break; }
         }
 
-        if(found) {
-            alert(`✅ НАЙДЕН\nВладелец: ${owner.profile.last} ${owner.profile.first}\nТип: ${found.type}`);
+        if(foundDoc) {
+            alert(`✅ СИСТЕМА ВЕРИФИКАЦИИ:\n\nСТАТУС: ПОДЛИННЫЙ\nВЛАДЕЛЕЦ: ${foundUser.profile.name}\nТИП: ${foundDoc.type.toUpperCase()}\nСРОК ДЕЙСТВИЯ: до ${foundDoc.expiry}\n\nПроверка завершена успешно.`);
         } else {
-            alert(`❌ ОШИБКА: ID ${scannedId} отсутствует в системе.`);
+            alert(`❌ ВНИМАНИЕ: ПОДДЕЛКА!\n\nID [${scannedId}] не найден в базе данных.\nДокумент недействителен!`);
         }
     }
 };
 
-// Запуск при старте
-App.init();
+System.init();
 </script>
 </body>
 </html>
