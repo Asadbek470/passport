@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Passport System 4.0 | iOS Edition</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        :root {
+            --ios-bg: #000000;
+            --glass: rgba(255, 255, 255, 0.1);
+            --blur: blur(25px);
+            --accent: #0A84FF;
+            --danger: #FF453A;
+            --success: #32D74B;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--ios-bg);
+            background-image: radial-gradient(circle at 50% -20%, #1c1c1e, #000);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 430px; /* Размер iPhone 15 Pro Max */
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- UI Screens --- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Glassmorphism --- */
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 24px;
+        }
+
+        /* --- Auth View --- */
+        .auth-container {
+            margin-top: auto;
+            margin-bottom: 40px;
+        }
+
+        h1 { font-weight: 700; font-size: 2.2rem; margin-bottom: 8px; }
+        p.subtitle { color: #8e8e93; margin-bottom: 30px; }
+
+        input {
+            width: 100%;
+            background: rgba(255,255,255,0.08);
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-secondary { background: transparent; color: var(--accent); margin-top: 10px; }
+        button:active { transform: scale(0.98); opacity: 0.8; }
+
+        /* --- Wallet Cards --- */
+        .docs-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 100px;
+            mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+        }
+
+        .card {
+            height: 220px;
+            border-radius: 18px;
+            margin-bottom: -140px; /* Эффект пачки карт */
+            position: relative;
+            padding: 20px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .card:last-child { margin-bottom: 20px; }
+        .card:hover { transform: translateY(-20px); z-index: 10; margin-bottom: -120px; }
+
+        .card.passport { background: linear-gradient(135deg, #5e0b15, #911a24); }
+        .card.travel { background: linear-gradient(135deg, #1a3a5f, #2c5e9e); }
+        .card.driver { background: linear-gradient(135deg, #3a3a3c, #1c1c1e); }
+        .card.id-card { background: linear-gradient(135deg, #0d4d3b, #1db954); }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .card-type { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; }
+        .card-chip { width: 40px; height: 30px; background: #d4af37; border-radius: 4px; opacity: 0.6; }
+        .card-id { font-family: monospace; margin-top: 20px; font-size: 1.1rem; }
+        
+        .qr-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 6px;
+            border-radius: 8px;
+        }
+
+        /* --- Tab Bar --- */
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 85px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 0.5px solid rgba(255,255,255,0.1);
+            padding-bottom: 20px;
+        }
+
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #8e8e93;
+            font-size: 0.65rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .tab-item.active { color: var(--accent); }
+        .tab-icon { font-size: 24px; margin-bottom: 4px; }
+
+        /* --- Scanner Overlay --- */
+        #scanner-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #000;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+
+        #reader { width: 100%; flex: 1; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <section id="auth-screen" class="screen active">
+        <div class="auth-container">
+            <h1>Passport 4.0</h1>
+            <p class="subtitle">Цифровое будущее в вашем кармане</p>
+            <div class="glass-panel">
+                <input type="text" id="login-user" placeholder="Логин">
+                <input type="password" id="login-pass" placeholder="Пароль">
+                <button class="btn-primary" onclick="System.auth('login')">Войти</button>
+                <button class="btn-secondary" onclick="System.auth('reg')">Создать аккаунт</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="main-screen" class="screen">
+        <header style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="current-category">Wallet</h2>
+            <div onclick="System.toggleScanner(true)" style="font-size: 24px; cursor: pointer;">🔍</div>
+        </header>
+
+        <div id="docs-list" class="docs-list">
+            </div>
+
+        <nav class="tab-bar">
+            <div class="tab-item active" onclick="System.filter('passport', this)">
+                <span class="tab-icon">📇</span><span>Паспорт</span>
+            </div>
+            <div class="tab-item" onclick="System.filter('travel', this)">
+                <span class="tab-icon">✈️</span><span>Загран</span>
+            </div>
+            <div class="tab-item" onclick="System.filter('driver', this)">
+                <span class="tab-icon">🚗</span><span>Права</span>
+            </div>
+            <div class="tab-item" onclick="System.filter('id-card', this)">
+                <span class="tab-icon">💳</span><span>ID</span>
+            </div>
+        </nav>
+    </section>
+
+    <div id="scanner-overlay">
+        <div id="reader"></div>
+        <button class="btn-primary" style="border-radius: 0;" onclick="System.toggleScanner(false)">Отмена</button>
+    </div>
+</div>
+
+<script>
+/**
+ * CORE SYSTEM ENGINE 4.0
+ * Архитектура: Модульная, имитация БД через LocalStorage
+ */
+const System = {
+    user: null,
+    db: JSON.parse(localStorage.getItem('ps_db')) || { users: [], docs: [] },
+    scanner: null,
+
+    save() {
+        localStorage.setItem('ps_db', JSON.stringify(this.db));
+    },
+
+    auth(type) {
+        const u = document.getElementById('login-user').value;
+        const p = document.getElementById('login-pass').value;
+
+        if(!u || !p) return alert("Заполните поля");
+
+        if(type === 'reg') {
+            if(this.db.users.find(x => x.u === u)) return alert("Пользователь существует");
+            this.db.users.push({ u, p, id: Date.now() });
+            this.save();
+            alert("Регистрация успешна!");
+        }
+
+        const found = this.db.users.find(x => x.u === u && x.p === p);
+        if(found) {
+            this.user = found;
+            this.navigate('main-screen');
+            this.filter('passport');
+        } else {
+            alert("Ошибка входа");
+        }
+    },
+
+    navigate(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    },
+
+    filter(type, el) {
+        if(el) {
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+        }
+        
+        const container = document.getElementById('docs-list');
+        const userDocs = this.db.docs.filter(d => d.userId === this.user.id && d.type === type);
+        
+        container.innerHTML = '';
+        
+        if(userDocs.length === 0) {
+            container.innerHTML = `
+                <div class="glass-panel" style="text-align:center; margin-top:40px; cursor:pointer" onclick="System.createDoc('${type}')">
+                    <div style="font-size:3rem; margin-bottom:10px">+</div>
+                    <p>Выпустить документ<br><small style="opacity:0.5">${type.toUpperCase()}</small></p>
+                </div>`;
+        }
+
+        userDocs.forEach(doc => {
+            const card = document.createElement('div');
+            card.className = `card ${doc.type}`;
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="card-type">${doc.typeName}</div>
+                    <div class="card-chip"></div>
+                </div>
+                <div class="card-id">${doc.id.match(/.{1,4}/g).join(' ')}</div>
+                <div style="margin-top:10px; font-size:0.8rem">EXP: ${doc.exp}</div>
+                <div class="qr-container">
+                    <canvas id="qr-${doc.id}"></canvas>
+                </div>
+            `;
+            container.appendChild(card);
+            QRCode.toCanvas(document.getElementById(`qr-${doc.id}`), doc.id, { width: 70, margin: 0 });
+        });
+    },
+
+    createDoc(type) {
+        const names = { passport: 'Internal Passport', travel: 'International Travel', driver: 'Driver License', 'id-card': 'Digital Identity' };
+        const newDoc = {
+            id: '40' + Math.floor(Math.random() * 1000000000),
+            userId: this.user.id,
+            type: type,
+            typeName: names[type],
+            exp: '04/2031'
+        };
+        this.db.docs.push(newDoc);
+        this.save();
+        this.filter(type);
+    },
+
+    toggleScanner(show) {
+        const overlay = document.getElementById('scanner-overlay');
+        overlay.style.display = show ? 'flex' : 'none';
+
+        if(show) {
+            this.scanner = new Html5Qrcode("reader");
+            this.scanner.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: 250 },
+                (text) => {
+                    this.verifyDoc(text);
+                    this.toggleScanner(false);
+                }
+            ).catch(() => {
+                alert("Камера не найдена. Введите ID вручную (секретная функция)");
+                let manual = prompt("Введите ID документа:");
+                if(manual) this.verifyDoc(manual);
+                this.toggleScanner(false);
+            });
+        } else {
+            if(this.scanner) this.scanner.stop();
+        }
+    },
+
+    verifyDoc(id) {
+        const doc = this.db.docs.find(d => d.id === id);
+        if(!doc) return alert("❌ СИСТЕМА: Документ не найден в базе данных.");
+        
+        const owner = this.db.users.find(u => u.id === doc.userId);
+        alert(`✅ ВАЛИДЕН\nТип: ${doc.typeName}\nВладелец: ${owner.u}\nСрок до: ${doc.exp}`);
+    }
+};
+</script>
+
+</body>
+</html>
